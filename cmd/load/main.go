@@ -46,7 +46,13 @@ func main() {
 	defer func() { err = errors.Join(err, file.Close()) }()
 
 	r := csv.NewReader(file)
-	r.Read()
+	_, err = r.Read()
+	if err == io.EOF {
+		log.Fatal("file is empty")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	rows := 0
 	for {
@@ -85,23 +91,8 @@ func main() {
 		rows++
 	}
 
-	fmt.Println("loaded", rows, "rows")
-
-	for i := 0; i < 5 && i < rows; i++ {
-		for _, col := range cols {
-			switch c := col.(type) {
-			case *schema.Int64Column:
-				fmt.Print(c.Values[i], " ")
-			case *schema.TimestampColumn:
-				fmt.Print(c.Values[i], " ")
-			case *schema.Float64Column:
-				fmt.Print(c.Values[i], " ")
-			case *schema.BoolColumn:
-				fmt.Print(c.Values[i], " ")
-			case *schema.StringColumn:
-				fmt.Print(c.Values[i], " ")
-			}
-		}
-		fmt.Println()
+	_, err = fmt.Println("loaded", rows, "rows")
+	if err != nil {
+		log.Fatal(err)
 	}
 }
