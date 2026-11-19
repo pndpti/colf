@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -15,7 +17,7 @@ func main() {
 	out := flag.String("out", "sales.csv", "output file name")
 	flag.Parse()
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec
 
 	cities := []string{
 		"Mumbai", "Delhi", "Bengaluru", "Hyderabad", "Chennai",
@@ -33,12 +35,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
+	defer func() { err = errors.Join(err, file.Close()) }()
 
 	w := bufio.NewWriter(file)
-	defer w.Flush()
+	defer func() { err = errors.Join(err, w.Flush()) }()
 
-	fmt.Fprintln(w, "order_id,created_at,customer,city,amount,is_returned")
+	_, err = fmt.Fprintln(w, "order_id,created_at,customer,city,amount,is_returned")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	orderID := int64(1000)
 	ts := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -62,7 +67,10 @@ func main() {
 
 		isReturned := rng.Float64() < 0.03
 
-		fmt.Fprintf(w, "%d,%d,%s,%s,%s,%t\n",
+		_, err = fmt.Fprintf(w, "%d,%d,%s,%s,%s,%t\n",
 			orderID, ts.Unix(), customer, city, amount, isReturned)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }

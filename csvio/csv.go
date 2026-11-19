@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -39,10 +40,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
+	defer func() { err = errors.Join(err, f.Close()) }()
 
 	r := csv.NewReader(f)
-	r.Read()
+	_, err = r.Read()
+	if err == io.EOF {
+		log.Fatal("file has no contents")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for {
 		rec, err := r.Read()

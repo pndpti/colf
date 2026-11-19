@@ -11,7 +11,7 @@ const (
 )
 
 type Field struct {
-	name     string
+	Name     string
 	Type     Type
 	Nullable bool
 }
