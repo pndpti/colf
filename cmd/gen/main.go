@@ -61,8 +61,8 @@ func main() {
 		}
 
 		amount := ""
-		if rng.Float64() < 0.05 {
-			amount = strconv.FormatFloat(rng.Float64()*1000, 'f', 2, 64)
+		if rng.Float64() >= 0.05 {
+			amount = strconv.FormatFloat(rng.Float64()*10000, 'f', 2, 64)
 		}
 
 		isReturned := rng.Float64() < 0.03
