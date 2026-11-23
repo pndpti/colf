@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/pndpti/colf/format"
 	"github.com/pndpti/colf/schema"
 )
 
@@ -64,6 +65,36 @@ func Write(w io.Writer, sc schema.Schema, cols []any) error {
 
 // Read decodes a whole colf file.
 func Read(b []byte) (schema.Schema, []any, error) {
+	var sc schema.Schema
+	var infos []colInfo
+	//var cols []any
+
 	// TODO: check magic at both ends, read footer length, parse footer, decode each column
-	return schema.Schema{}, nil, errors.New("not implemented")
+	if len(b) < 13 || string(b[:4]) != "COLF" || string(b[len(b)-4:]) != "COLF" {
+		return sc, nil, errors.New("not a colf file")
+	}
+
+	footerLength := int(binary.LittleEndian.Uint32(b[len(b)-8 : len(b)-4]))
+	footerStart := len(b) - 8 - footerLength
+	footer := b[footerStart : footerStart+footerLength]
+
+	r := format.NewBufReader(footer)
+	_ = int(r.Uvarint())
+	numCols := int(r.Uvarint())
+
+	for range numCols {
+		nameLength := int(r.Uvarint())
+		name := string(r.Bytes(nameLength))
+		typ := schema.Type(r.Bytes(1)[0])
+		offset := int(r.Uvarint())
+		size := int(r.Uvarint())
+
+		sc.Fields = append(sc.Fields, schema.Field{Name: name, Type: typ})
+		infos = append(infos, colInfo{offset: offset, size: size})
+	}
+	if r.Err() != nil {
+		return sc, nil, r.Err()
+	}
+
+	return sc, nil, errors.New("TODO")
 }
