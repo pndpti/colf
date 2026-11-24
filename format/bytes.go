@@ -40,6 +40,14 @@ func (r *BufReader) Uint32() uint32 {
 	return binary.LittleEndian.Uint32(b)
 }
 
+func (r *BufReader) Uint64() uint64 {
+	b := r.Bytes(8)
+	if b == nil {
+		return 0
+	}
+	return binary.LittleEndian.Uint64(b)
+}
+
 func (r *BufReader) Uvarint() uint64 {
 	if r.err != nil {
 		return 0

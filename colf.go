@@ -67,7 +67,6 @@ func Write(w io.Writer, sc schema.Schema, cols []any) error {
 func Read(b []byte) (schema.Schema, []any, error) {
 	var sc schema.Schema
 	var infos []colInfo
-	//var cols []any
 
 	// TODO: check magic at both ends, read footer length, parse footer, decode each column
 	if len(b) < 13 || string(b[:4]) != "COLF" || string(b[len(b)-4:]) != "COLF" {
@@ -79,7 +78,7 @@ func Read(b []byte) (schema.Schema, []any, error) {
 	footer := b[footerStart : footerStart+footerLength]
 
 	r := format.NewBufReader(footer)
-	_ = int(r.Uvarint())
+	numRows := int(r.Uvarint())
 	numCols := int(r.Uvarint())
 
 	for range numCols {
@@ -96,5 +95,30 @@ func Read(b []byte) (schema.Schema, []any, error) {
 		return sc, nil, r.Err()
 	}
 
-	return sc, nil, errors.New("TODO")
+	var cols []any
+	for i, info := range infos {
+		cr := format.NewBufReader(b[info.offset : info.offset+info.size])
+
+		switch sc.Fields[i].Type {
+		case schema.Int64:
+			c := &schema.Int64Column{}
+			for range numRows {
+				c.Values = append(c.Values, int64(cr.Uint64()))
+			}
+			cols = append(cols, c)
+		case schema.String:
+			c := &schema.StringColumn{}
+			for range numRows {
+				n := int(cr.Uvarint())
+				s := string(cr.Bytes(n))
+				c.Values = append(c.Values, s)
+			}
+			cols = append(cols, c)
+		}
+		if cr.Err() != nil {
+			return sc, nil, cr.Err()
+		}
+	}
+
+	return sc, cols, nil
 }
