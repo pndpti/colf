@@ -18,7 +18,7 @@ type colInfo struct {
 // Write encodes cols (each *schema.Int64Column or *schema.StringColumn,
 // in the same order as sc.Fields) as a colf file.
 func Write(w io.Writer, sc schema.Schema, cols []any) error {
-	// TODO: magic + version, columns (record offset/size), footer, footer length, magic
+	// magic + version, columns (record offset/size), footer, footer length, magic
 	b := []byte("COLF")
 	b = append(b, 1)
 	var infos []colInfo
@@ -68,7 +68,7 @@ func Read(b []byte) (schema.Schema, []any, error) {
 	var sc schema.Schema
 	var infos []colInfo
 
-	// TODO: check magic at both ends, read footer length, parse footer, decode each column
+	// check magic at both ends, read footer length, parse footer, decode each column
 	if len(b) < 13 || string(b[:4]) != "COLF" || string(b[len(b)-4:]) != "COLF" {
 		return sc, nil, errors.New("not a colf file")
 	}
